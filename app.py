@@ -1,15 +1,23 @@
 
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, Response
 import sqlite3
+import os
+import csv
+import io
 
 app = Flask(__name__)
+DB_PATH = os.path.join(os.path.dirname(__file__), "students.db")
 
 
-def create_database():
-    connection = sqlite3.connect("students.db")
-    cursor = connection.cursor()
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-    cursor.execute("""
+
+def init_db():
+    conn = get_db()
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS students (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -19,113 +27,50 @@ def create_database():
             course TEXT NOT NULL
         )
     """)
-
-    connection.commit()
-    connection.close()
+    conn.commit()
+    conn.close()
 
 
 @app.route("/")
-def home():
-    create_database()
+def index():
+    query = request.args.get("q", "").strip()
+    conn = get_db()
 
-    connection = sqlite3.connect("students.db")
-    cursor = connection.cursor()
+    if query:
+        like = f"%{query}%"
+        students = conn.execute(
+            """SELECT * FROM students
+               WHERE name LIKE ? OR email LIKE ? OR course LIKE ?
+               ORDER BY id""",
+            (like, like, like),
+        ).fetchall()
+    else:
+        students = conn.execute("SELECT * FROM students ORDER BY id").fetchall()
 
-    cursor.execute("""
-        SELECT id, name, age, email, phone, course
-        FROM students
-    """)
-
-    students = cursor.fetchall()
-
-    connection.close()
-
-    return render_template("index.html", students=students)
-
-
-@app.route("/add", methods=["POST"])
-def add_student():
-
-    name = request.form["name"]
-    age = request.form["age"]
-    email = request.form["email"]
-    phone = request.form["phone"]
-    course = request.form["course"]
-
-    connection = sqlite3.connect("students.db")
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        INSERT INTO students
-        (name, age, email, phone, course)
-        VALUES (?, ?, ?, ?, ?)
-    """, (name, age, email, phone, course))
-
-    connection.commit()
-    connection.close()
-
-    return redirect(url_for("home"))
+    conn.close()
+    return render_template("index.html", students=students, query=query)
 
 
-@app.route("/delete/<int:student_id>", methods=["POST"])
-def delete_student(student_id):
+@app.route("/export")
+def export_csv():
+    query = request.args.get("q", "").strip()
+    conn = get_db()
 
-    connection = sqlite3.connect("students.db")
-    cursor = connection.cursor()
+    if query:
+        like = f"%{query}%"
+        students = conn.execute(
+            """SELECT * FROM students
+               WHERE name LIKE ? OR email LIKE ? OR course LIKE ?
+               ORDER BY id""",
+            (like, like, like),
+        ).fetchall()
+    else:
+        students = conn.execute("SELECT * FROM students ORDER BY id").fetchall()
 
-    cursor.execute(
-        "DELETE FROM students WHERE id = ?",
-        (student_id,)
-    )
+    conn.close()
 
-    connection.commit()
-    connection.close()
-
-    return redirect(url_for("home"))
-
-
-@app.route("/edit/<int:student_id>", methods=["GET", "POST"])
-def edit_student(student_id):
-
-    connection = sqlite3.connect("students.db")
-    cursor = connection.cursor()
-
-    if request.method == "POST":
-
-        name = request.form["name"]
-        age = request.form["age"]
-        email = request.form["email"]
-        phone = request.form["phone"]
-        course = request.form["course"]
-
-        cursor.execute("""
-            UPDATE students
-            SET name = ?,
-                age = ?,
-                email = ?,
-                phone = ?,
-                course = ?
-            WHERE id = ?
-        """, (name, age, email, phone, course, student_id))
-
-        connection.commit()
-        connection.close()
-
-        return redirect(url_for("home"))
-
-    cursor.execute("""
-        SELECT id, name, age, email, phone, course
-        FROM students
-        WHERE id = ?
-    """, (student_id,))
-
-    student = cursor.fetchone()
-
-    connection.close()
-
-    return render_template("edit.html", student=student)
-
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Name", "Age", "Email", "Phone", "Course"])
+    for s in students:
+        writer.writerow([s["id"], s["name"], s["age"], s["email"], s["phone"], s["course"]])
