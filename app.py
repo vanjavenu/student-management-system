@@ -126,5 +126,6 @@ def edit_student(student_id):
     return render_template("edit.html", student=student)
 
 
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=10000)
