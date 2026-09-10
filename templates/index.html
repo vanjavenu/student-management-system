@@ -33,7 +33,7 @@
             margin-top: 0;
         }
 
-        form {
+        .add-form {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 15px;
@@ -46,7 +46,7 @@
             font-size: 15px;
         }
 
-        button {
+        .add-button {
             grid-column: span 2;
             padding: 12px;
             background: #333;
@@ -73,6 +73,37 @@
             color: white;
         }
 
+        .action-cell {
+            white-space: nowrap;
+        }
+
+        .edit-button {
+            display: inline-block;
+            background: #555;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-right: 5px;
+        }
+
+        .delete-form {
+            display: inline;
+        }
+
+        .delete-button {
+            background: red;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .delete-button:hover {
+            background: darkred;
+        }
+
         .no-data {
             text-align: center;
             color: #777;
@@ -90,23 +121,52 @@
     </div>
 
     <div class="box">
+
         <h2>➕ Add Student</h2>
 
-        <form action="/add" method="POST">
+        <form class="add-form" action="/add" method="POST">
 
-            <input type="text" name="name" placeholder="Student Name" required>
+            <input
+                type="text"
+                name="name"
+                placeholder="Student Name"
+                required
+            >
 
-            <input type="number" name="age" placeholder="Age" required>
+            <input
+                type="number"
+                name="age"
+                placeholder="Age"
+                required
+            >
 
-            <input type="email" name="email" placeholder="Email" required>
+            <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                required
+            >
 
-            <input type="text" name="phone" placeholder="Phone Number" required>
+            <input
+                type="text"
+                name="phone"
+                placeholder="Phone Number"
+                required
+            >
 
-            <input type="text" name="course" placeholder="Course" required>
+            <input
+                type="text"
+                name="course"
+                placeholder="Course"
+                required
+            >
 
-            <button type="submit">Add Student</button>
+            <button class="add-button" type="submit">
+                Add Student
+            </button>
 
         </form>
+
     </div>
 
     <div class="box">
@@ -116,6 +176,7 @@
         {% if students %}
 
         <table>
+
             <thead>
                 <tr>
                     <th>ID</th>
@@ -124,34 +185,16 @@
                     <th>Email</th>
                     <th>Phone</th>
                     <th>Course</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
 
             <tbody>
+
                 {% for student in students %}
+
                 <tr>
                     <td>{{ student[0] }}</td>
                     <td>{{ student[1] }}</td>
                     <td>{{ student[2] }}</td>
-                    <td>{{ student[3] }}</td>
-                    <td>{{ student[4] }}</td>
-                    <td>{{ student[5] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        {% else %}
-
-        <div class="no-data">
-            No students found in the database.
-        </div>
-
-        {% endif %}
-
-    </div>
-
-</div>
-
-</body>
-</html>
+                    
